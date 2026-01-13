@@ -222,4 +222,4 @@ in Transformer we have new wieght matrices that act a "search engine" for meanin
 - Key(K) : what a word contains(like identity)
 - Value(V) : the actual information the word provides once a match is found
 
-![Tranformer Architictor]()
+![Tranformer Architictor](transformers.webp)
