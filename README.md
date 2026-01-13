@@ -302,6 +302,188 @@ Let’s look at the word "king" and see how it interacts with the rest of the se
 - Key ($K$): Think of this as a Label or Identity Card.For "Yassine": "I am a proper noun, a person, and a subject."For "world": "I am a physical location/concept."
 - Value ($V$): Think of this as the Information the word carries.For "Yassine": The actual semantic meaning of "Yassine."
 
+---
+
+![1](1.png) <br>
 
 
+### 📌 What’s Happening in This Image?
+
+This image shows **how raw text gets converted into numerical vectors (embeddings)** that the Transformer model can understand and process.
+
+Let’s break it down:
+
+---
+
+## ✅ Step 1: Input Text → Tokens
+
+> **Text**: `"I can go alone"`
+
+The model first splits this sentence into individual units called **tokens**.
+
+- `I`
+- `can`
+- `go`
+- `alone`
+
+These are your **Input Tokens**.
+
+💡 *Note*: In real models like BERT or GPT, tokenization can be more complex (e.g., subword tokens like “go” vs “goes”), but for simplicity, this example uses whole words.
+
+---
+
+## ✅ Step 2: Tokens → Token IDs
+
+Each token is mapped to a unique number using a **vocabulary lookup table** (like a dictionary).
+
+So:
+- `"I"` → `105`
+- `"can"` → `255`
+- `"go"` → `1001`
+- `"alone"` → `600`
+
+These are called **Input IDs**.
+
+🧠 Think of this like assigning each word an ID card so the computer can recognize it numerically.
+
+---
+
+## ✅ Step 3: Token IDs → Embeddings
+
+Now, each token ID is converted into a **vector (list of numbers)** called an **embedding**.
+
+In this case, each embedding has **512 dimensions** — meaning each word becomes a vector with 512 floating-point numbers.
+
+Example:
+- `"I"` → `[103.65, 633.01, 25.33, ..., 152.06]` ← 512 numbers
+- `"can"` → `[636.22, 2.01, 96.25, ..., 636.28]`
+- etc.
+
+🎯 **Why?** Because neural networks can’t work directly with words or IDs — they need dense numerical representations that capture semantic meaning. These embeddings are learned during training and encode things like meaning, context, and relationships between words.
+
+---
+
+
+## 💡 Important Notes:
+
+- The **embedding layer** is usually a simple lookup table (a matrix) where each row corresponds to a word/token.
+- The size `512` is common in early Transformer papers (like "Attention Is All You Need") — modern models may use 768, 1024, or even 4096 dimensions.
+- These embeddings are often combined later with **positional encodings** (we’ll see that next!) because Transformers don’t inherently know word order.
+
+---
+
+## 🧠 Pro Tip for Learning:
+
+When studying Transformers, always ask yourself:
+> “What does the model ‘see’ at this stage?”
+
+At this point, it sees **a sequence of 512-dimensional vectors**, one per token — ready to be fed into the next part: **Positional Encoding + Self-Attention**.
+
+---
+
+![2](2.png)
+
+## ❓ Why Do We Need Positional Encoding?
+
+Remember: Transformers don’t have recurrence (like RNNs) or convolution (like CNNs). They process all tokens **in parallel**. That means:
+
+> ❗ The model has **no built-in sense of word order**.
+
+So if you give it:
+- `"I can go alone"` vs
+- `"alone go can I"`
+
+… it would treat them as the same set of words — which is **wrong** for language!
+
+➡️ To fix this, we add **Positional Encodings** — special vectors that tell the model *where each token is located in the sequence*.
+
+---
+
+## ✅ What’s Happening in This Image?
+
+Let’s walk through it step by step:
+
+### 1. You already have your **Word Embeddings**
+From Step 1:
+- Each token → 512-dimensional vector.
+- Example: `"I"` → `[103.65, ..., 152.06]`
+
+These are shown in **orange boxes**.
+
+---
+
+### 2. Now Add **Positional Embeddings**
+
+Each position gets its own unique 512D vector — called a **positional embedding**.
+
+These are shown in **gray boxes**, one per token.
+
+📌 Important: These positional embeddings are **not learned** like word embeddings — they are **precomputed using sine and cosine functions** (we’ll explain why below).
+
+Example:
+- Position 1 (`"I"`) → some gray vector
+- Position 2 (`"can"`) → another gray vector
+- etc.
+
+---
+
+### 3. Add Them Together → Final Encoder Input
+
+The model simply **adds** the word embedding + positional embedding element-wise:
+
+```
+Encoder Input = Word Embedding + Positional Embedding
+```
+
+This gives us the final input to the Transformer encoder — still 512D per token, but now with **both semantic meaning AND position info**.
+
+✅ So even though the orange values didn’t change visually in the image, they’ve been combined with positional info — making the model aware of word order.
+
+---
+
+## 💡 Pro Tip:
+
+Think of positional encoding like giving each word a **“seat number”** in a theater. Even if all actors look the same, their seat numbers tell you who’s on the left/right/front/back — so you know the scene’s structure.
+
+---
+
+
+![3](3.png)
+
+
+## 🧮 How Are Positional Encodings Computed? (Optional Deep Dive)
+
+They use this formula from the original paper “Attention Is All You Need”:
+
+For position `pos` and dimension `i`:
+
+```
+PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
+```
+
+Where:
+- `d_model = 512` (embedding size)
+- `pos` = position in sequence (0, 1, 2, ...)
+- `i` = dimension index (0 to 511)
+
+🧠 Why sine/cosine?
+- Smooth, continuous, and allow the model to **extrapolate** to longer sequences than seen during training.
+- Also lets the model learn **relative positions** easily (e.g., "word A is 3 positions before word B").
+
+---
+
+![4](4.png)
+
+
+![5](5.png)
+![6](6.png)
+![7](7.png)
+![8](8.png)
+![9](9.png)
+![10](10.png)
+![11](11.png)
+![12](12.png)
+![13](13.png)
+![14](14.png)
 
