@@ -67,6 +67,77 @@ The answer is: **We don't convert them; we let the model "invent" them.**
 -> Now how do we get from a simple Id like 104 to a vector of 768 numbers? **we use a embedding matrix** : 
 size of this matrix : is if our dict has 30K words and our dimension 768 , this matrix is 30000*768.
 becouse the model serching in this matrix .
+
+---
+### What each number in the vector mean (768) : 
+Each number in a 768-dimension vector (embedding) represents a **Feature** or a **Semantic Dimension**.
+
+You should think of these numbers as "coordinates" in a 768-dimensional space where the model maps the meaning of words.
+
+---
+
+### 1. What a "Feature" actually is
+
+If you could "open up" the vector for the word **"king"**, each of those 768 numbers would act as a specific "meaning score":
+
+* **Dimension 1 (Gender):** Might be a high positive number like **0.95**, representing "Masculinity."
+* **Dimension 2 (Royalty):** Might be **0.88**, representing "Power/Ruler."
+* **Dimension 3 (Food):** Might be **-0.01**, because a king is not typically an object you eat.
+* **Dimension 4 (Age):** Might be **0.40**, representing a tendency toward being an "Adult."
+
+### 2. Human vs. AI Understanding
+
+There is a big catch you should mention in your presentation: **We cannot usually name these dimensions.**
+
+* **Human Intuition:** We would love to say "Dimension #45 is definitely the 'Color' dimension."
+* **AI Reality:** The model finds its own 768 patterns that work best for math. Dimension #45 might be a weird mix of "Is a plural noun" + "Is related to nature" + "Usually found in the beginning of a sentence." This is called **Distributed Representation**.
+
+### 3. Why 768? (The "Resolution" of Meaning)
+
+Why not just 3 numbers? Because the human language is too complex.
+
+* If you only have 3 numbers, "King," "Prince," and "Duke" would all look exactly the same.
+* With 768 numbers, the model has enough "room" to distinguish the tiny differences between a "King" (sovereign) and a "Prince" (heir).
+> so feature like paramatere? : <br>
+
+  You are absolutely correct—you’ve hit on the most important concept in modern AI!
+
+Yes, every one of those 768 numbers is a **parameter**. And yes, the model "chooses" (learns) what those numbers should represent to best understand language.
+
+---
+
+### 1. Who creates the "Gender" column?
+
+In the old days of AI, engineers tried to manually create columns:
+
+* Column 1: Gender
+* Column 2: Royalty
+* Column 3: Is a name?
+
+**But humans are bad at this.** We can't think of 768 different categories for every word in the world.
+
+So, we let the **Model** do it. We give the model 768 "empty slots" (random numbers) for the word "Yassine". During training, the model realizes: *"Wait, every time I see 'Yassine,' I also see the word 'he' or 'man.' I should change the value in Slot #12 to a high number to represent this pattern."*
+
+### 2. The Model as the "Decision Maker"
+
+The model "chooses" the best features through **optimization**.
+
+* It doesn't "know" what gender is in a human sense.
+* It only knows that "Yassine," "King," and "Man" all share a similar mathematical pattern in a specific column.
+* If the model notices that "Yassine" and "King" always appear in sentences about power, it will create a "Power" column (Parameter) automatically.
+
+### 3. "Yassine" in the Vector vs. the Word
+
+You asked: *"In the vector, we find a column for gender, but for the word, we don't find a gender column?"*
+
+Exactly!
+
+* **The Text Word:** "Yassine" is just 7 letters. It contains no metadata.
+* **The Vector (Embedding):** This is where the "hidden meaning" lives. The vector is the model's **translation** of those 7 letters into 768 meaningful numbers (parameters).
+
+
+---
+
 ### RNN : 
 ![structor of RNN](Screenshot%20from%202026-01-13%2013-18-38.png)
 -> how the calculs happen ?
@@ -223,6 +294,14 @@ in Transformer we have new wieght matrices that act a "search engine" for meanin
 - Value(V) : the actual information the word provides once a match is found
 
 ![Tranformer Architictor](transformers.webp)
-![Math]()
+![Math](Screenshot%20from%202026-01-13%2014-06-15.png)
+
+
+Let’s look at the word "king" and see how it interacts with the rest of the sentence.(ex : Yassine is the king of the world) hhhh. <br>
+- Query ($Q$): Think of this as a Search Query.For "king": "I am a royal title. Is there a person or a name in this sentence that I belong to?"
+- Key ($K$): Think of this as a Label or Identity Card.For "Yassine": "I am a proper noun, a person, and a subject."For "world": "I am a physical location/concept."
+- Value ($V$): Think of this as the Information the word carries.For "Yassine": The actual semantic meaning of "Yassine."
+
+
 
 
