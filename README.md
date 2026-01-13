@@ -223,3 +223,6 @@ in Transformer we have new wieght matrices that act a "search engine" for meanin
 - Value(V) : the actual information the word provides once a match is found
 
 ![Tranformer Architictor](transformers.webp)
+![Math]()
+
+
