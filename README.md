@@ -67,3 +67,159 @@ The answer is: **We don't convert them; we let the model "invent" them.**
 -> Now how do we get from a simple Id like 104 to a vector of 768 numbers? **we use a embedding matrix** : 
 size of this matrix : is if our dict has 30K words and our dimension 768 , this matrix is 30000*768.
 becouse the model serching in this matrix .
+### RNN : 
+![structor of RNN](Screenshot%20from%202026-01-13%2013-18-38.png)
+-> how the calculs happen ?
+
+### 1. The Initial Hidden State ($a^{<0>} = \vec{0}$)
+
+ Is typically a vector of zeros.
+
+* **The Reason:** Since "Yassine" is the very first word, the model has no "past" to remember yet. The zeros simply represent an "empty memory".
+
+### 2. The Weights  ($W_{aa}$ and $W_{ax}$)  are the "Brain"
+
+Think of the weights as the model's **knowledge of the English language**.
+
+* **Initialization:** When you start training, these matrices are filled with **small random numbers**, not zeros.
+* **Learning:** During training, the model adjusts these numbers so it can understand that if the first word is a name like "Yassine," the next word is likely a verb like "is."
+
+### 3. The Math for the First Word
+
+Let's look at your equation for the first step ():
+
+* **The  part:** Because it multiplies by the zeros of , this part of the equation becomes zero **for this step only**. The "memory" contribution is empty.
+* **The  part:** This is where the magic happens!  (which is NOT zero) multiplies the vector for "Yassine" (). This allows the model to capture the meaning of the first word and store it in the new hidden state .
+
+Example : 
+
+Let’s look at the "Yassine" calculation with real numbers. To keep the math simple for your presentation, we will use an embedding size of **3** and a hidden size of **3** (instead of 768).
+
+### 1. The Inputs
+
+* ** (Embedding for "Yassine"):** $[1, 2, 3]^T$.
+* $W_{ax}$** (Learned Weights):**
+  
+        $$\begin{bmatrix} 0.1 & 0.2 & 0.3 \\ 0.4 & 0.5 & 0.6 \\ 0.7 & 0.8 & 0.9 \end{bmatrix}$$
+  
+### 2. The Step-by-Step Multiplication (($W_{ax} \cdot x^{<1>}$))
+
+This is a **Matrix-Vector Multiplication**, which is essentially **3 separate dot products**.
+
+* **Dot Product 1 (Top row):**
+  
+        $$(0.1 \times 1) + (0.2 \times 2) + (0.3 \times 3) = 0.1 + 0.4 + 0.9 = \mathbf{1.4}$$
+
+* **Dot Product 2 (Middle row):**
+
+        $$(0.4 \times 1) + (0.5 \times 2) + (0.6 \times 3) = 0.4 + 1.0 + 1.8 = \mathbf{3.2}$$
+
+* **Dot Product 3 (Bottom row):**
+  
+        $$(0.7 \times 1) + (0.8 \times 2) + (0.9 \times 3) = 0.7 + 1.6 + 2.7 = \mathbf{5.0}$$
+
+
+### 3. The Result
+
+The output of the $W_{ax}$ part is a new vector:
+        
+        $$\begin{bmatrix} 1.4 \\ 3.2 \\ 5.0 \end{bmatrix}$$
+
+### What happens next in the formula?
+
+According to the RNN equation:
+
+**Addition:** This result $[1.4, 3.2, 5.0]$ is added to the memory part ($W_{aa} a^{<0>}$) and the bias ($b_a$).2. 
+**Activation:** The sum goes into  g (tanh) to squash the numbers between -1 and 1.
+3. **Final State:** The result is a—the model's first "memory" of "Yassine".
+
+**Key Takeaway for your slide:**
+The matrix  acts as a "translator" that takes the raw word vector and extracts specific features (like "Is this a person?" or "Is this the start of a sentence?") into the model's internal memory space.
+
+-> how we choose b? : 
+$b_a$ is a learnable parameter, exactly like the weight matrices $W_{ax}$ and $W_{aa}$.
+b is also matrix <br>
+so the result is matrice like this 
+
+$$a^{<1>} = \begin{bmatrix} 0.885 \\ 0.997 \\ 1.000 \end{bmatrix}$
+
+ok we get the a lets calcul y : 
+- $W_{ya}$ (Learned Weights): $\begin{bmatrix} 0.5 & -0.1 & 0.8 \end{bmatrix}$ (Size $1 \times 3$)$b_y$ 
+- (Bias): $[0.1]$
+This is the final step of the RNN process—taking the "memory" you just created and turning it into an actual **prediction**.
+
+In your diagrams, the notation **** in the weight matrix  stands for **"from  to "**. This matrix is the "bridge" between the hidden layer and the final output layer.
+
+### 1. The Output Equation
+
+According to your slide, the output  is calculated as:
+
+
+* ****: This is the hidden state (the "memory") you just calculated.
+* ****: This is a learned weight matrix that translates that memory into something the outside world understands (like a word prediction).
+* ****: This is the second activation function, usually a **Softmax** if we are trying to choose a word from a dictionary.
+
+---
+
+### 2. Practical Example using our "Yassine" results
+
+Let's use the  vector we just calculated: .
+
+Imagine our model is trying to predict if the sentence is "Positive" or "Negative." Our output  only needs to be **one number** (Probability).
+
+**The Setup:**
+
+* **Input **: 
+* ** (Learned Weights)**:  (Size )
+* ** (Bias)**: 
+
+**The Math Step-by-Step:**
+
+1. **The Dot Product (($W_{ya} \cdot a^{<1>}$)):**
+
+
+        $$(0.5 \times 0.885) + (-0.1 \times 0.997) + (0.8 \times 1.000)$$$$0.4425 - 0.0997 + 0.8 = \mathbf{1.1428}$$
+
+2. **Add Bias:**
+   
+        $$1.1428 + 0.1 = \mathbf{1.2428}$$
+
+4. **Apply  (Sigmoid for probability):**
+
+        $$\text{Sigmoid}(1.2428) \approx \mathbf{0.776}$$
+
+
+**The Result ():** 0.776. This means the model is **77.6% sure** that after the word "Yassine," the sentence is heading in a positive direction.
+
+---
+
+-> Ok what limtation for RNN ? 
+### Limitation : 
+
+1. Vanishing and Exploding Gradients
+This remains the most famous drawback. During training, as errors are backpropagated through many time steps (Backpropagation Through Time), the gradients are repeatedly multiplied by weights. 
+Vanishing: Gradients become extremely small, approaching zero, which prevents the network from learning long-term dependencies because the weights in earlier layers stop updating.
+Exploding: Gradients grow exponentially large, causing numerical instability and making the model's weights diverge. 
+2. Sequential Processing Bottleneck
+RNNs process data linearly (word by word), meaning the computation for the current step depends on the result of the previous step. 
+Lack of Parallelism: Unlike Transformers, which process entire sequences at once, RNNs cannot fully leverage modern parallel hardware like GPUs/TPUs, leading to significantly slower training and inference times for long sequences. 
+3. Limited "Long-Term" Memory
+Even with variants like LSTMs or GRUs, basic RNNs struggle to maintain information across long gaps. 
+Bias Towards Recent Data: The "hidden state" (memory) is a fixed size. As new information arrives, older context is progressively diluted or overwritten, causing the model to "forget" the beginning of a long document by the time it reaches the end. 
+4. Difficulty with Global Context
+Because RNNs process sequences in a specific order (usually left-to-right), they often fail to capture the "global" context of a sentence where a word's meaning might depend heavily on a word that appears much later.
+
+thier solution solved the vanishing problem is LSTM but also still process data linearly (word by word)
+
+-> That why the engineers create "the attention is all what you need" paper
+
+---
+
+### TRANSFORMER : 
+Look at every word simultaneusly . there is no previous state a(t-1). it use Self attention instead of use W(ax),W(aa) .
+in Transformer we have new wieght matrices that act a "search engine" for meaning :
+- Query(Q) : what a word is looking for.
+- Key(K) : what a word contains(like identity)
+- Value(V) : the actual information the word provides once a match is found
+
+![Tranformer Architictor]()
