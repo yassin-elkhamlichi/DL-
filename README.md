@@ -480,6 +480,129 @@ Where:
 - Smooth, continuous, and allow the model to **extrapolate** to longer sequences than seen during training.
 - Also lets the model learn **relative positions** easily (e.g., "word A is 3 positions before word B").
 
+---
+
+![6](6.png)
+
+## ✅ **Multi-Head Attention Explained — Precisely Based on Your Image**
+
+### 🖼️ **What Your Image Shows**
+
+| Component | Visual | Meaning |
+|-----------|--------|---------|
+| **Input** | `(seq, d_model) = (4, 512)` | 4 tokens × 512D embeddings |
+| **Q/K/V Paths** | 3 parallel paths (green/orange) | Query, Key, Value projections |
+| **Weight Matrices** | `W^q`, `W^k`, `W^v` | Learned projection matrices |
+| **Head Splitting** | `Q1, Q2, Q3, Q4` | Split into 4 heads |
+| **Per-Head Dimensions** | `d_k = d_model/h = 128` | 512/4 = 128 per head |
+| **Concatenation** | `HEAD 1-4` → `H` | Combine head outputs |
+| **Output Projection** | `W^O` | Final linear transformation |
+
+---
+
+## 🔍 **Step-by-Step Explanation (Follow the Data Flow)**
+
+### ✅ **Step 1: Project Input into Q/K/V**
+```
+Input (4×512) → 
+  Q = Input × W^q (512×512) → (4×512)
+  K = Input × W^k (512×512) → (4×512)
+  V = Input × W^v (512×512) → (4×512)
+```
+- **Why?** To create separate representations for query, key, and value roles
+- **Critical**: All three come from the *same input* (hence *self*-attention)
+
+---
+
+### ✅ **Step 2: Split into Multiple Heads**
+```
+Q (4×512) → Split into 4 heads → Q1, Q2, Q3, Q4 (each 4×128)
+K (4×512) → Split into 4 heads → K1, K2, K3, K4 (each 4×128)
+V (4×512) → Split into 4 heads → V1, V2, V3, V4 (each 4×128)
+```
+- **How?** Reshape: `(4, 512) → (4, 4, 128)` then split along head dimension
+- **Why 128?** `d_k = d_model / h = 512 / 4 = 128 (maintains total dimensionality)
+
+---
+
+### ✅ **Step 3: Compute Attention Per Head**
+```
+For each head i (1-4):
+  head_i = Attention(Q_i, K_i, V_i) 
+          = softmax(Q_i K_i^T / √d_k) × V_i
+```
+- **Dimensions**: `(4×128) × (128×4) = 4×4` → softmax → `4×4 × 4×128 = 4×128`
+- **Critical**: Each head operates **independently** on its own subspace
+
+---
+
+### ✅ **Step 4: Concatenate Heads**
+```
+Concat(head_1, head_2, head_3, head_4) 
+  = (4×128, 4×128, 4×128, 4×128) 
+  → (4×512)
+```
+- **Why?** To combine information from all perspectives
+- **How**: Stack head outputs along the dimension axis: `[head1; head2; head3; head4]`
+
+---
+
+### ✅ **Step 5: Final Projection**
+```
+Output = Concat(heads) × W^O (512×512) → (4×512)
+```
+- **Why?** To recombine information into the original dimensionality
+- **W^O**: Learned projection matrix that mixes head information
+
+---
+
+## 💡 **Why Multi-Head Attention Matters (The Big Picture)**
+
+| Single-Head | Multi-Head |
+|-------------|------------|
+| **One perspective** on relationships | **Multiple perspectives** simultaneously |
+| Might miss critical relationships | Captures **different relationship types** |
+| Example: Only subject-verb agreement | Example: Subject-verb + noun-modifier + coreference |
+
+### 🔑 **Critical Insight**:
+Different heads specialize in different tasks:
+- **Head 1**: Subject-verb agreement (e.g., "I go" vs "He goes")
+- **Head 2**: Noun-modifier relationships (e.g., "red car")
+- **Head 3**: Coreference resolution (e.g., "John said he...")
+- **Head 4**: Long-range dependencies (e.g., "The cat that ate the mouse...")
+
+This is why Transformers understand language so well — they don't just see *one* type of relationship, but **multiple types at once**.
+
+---
+
+## 🧠 **Intuition: Think of It Like This**
+
+Imagine 4 experts analyzing a sentence:
+> **"I can go alone"**
+
+- **Expert 1 (Grammar)**: Focuses on subject-verb agreement ("I go" not "I goes")
+- **Expert 2 (Semantics)**: Focuses on meaning ("go alone" = solitude)
+- **Expert 3 (Context)**: Focuses on pronoun reference ("I" = speaker)
+- **Expert 4 (Structure)**: Focuses on sentence structure (subject-verb-object)
+
+Each expert gives their independent analysis → all reports are combined → final understanding.
+
+That's multi-head attention.
+
+---
+
+## ❗ **Critical Clarification (Based on Your Feedback)**
+
+- **Not just "more attention"**: It's **parallel processing of different relationship types**
+- **Dimensions are critical**: 
+  - `d_model = 512` (total embedding size)
+  - `h = 4` (number of heads)
+  - `d_k = d_v = 128` (per-head dimension)
+  - Must satisfy: `h × d_k = d_model` (512 = 4 × 128)
+- **No dimension loss**: Total capacity remains the same as single-head
+
+---
+
 ![7](7.png)
 
 This slide teaches the **core idea behind Q/K/V** using a real-world lookup example.
@@ -711,12 +834,421 @@ At the end, **every person has updated their view** — now informed by the whol
 
 ---
 
+> Multi-head attention is the Transformer's implementation of self-attention — it runs multiple self-attention heads in parallel, not sequentially.
+> Self-attention is the operation INSIDE each head — not a step before multi-head attention
+
+![es](es.png)
+
+## 🔍 **What Is the Feed Forward Network?**
+
+It's a **simple 2-layer MLP (Multi-Layer Perceptron)** applied **independently to each token position**.
+
+### 📌 Key Properties:
+| Property | Meaning |
+|----------|---------|
+| **Position-wise** | Same FFN applied to *each token separately* (no mixing between tokens) |
+| **Fully connected** | Standard dense layers (no attention, no recurrence) |
+| **Non-linear** | Uses ReLU (or GELU in later models) to add expressivity |
+| **Expands then contracts** | Hidden layer is **wider** than input/output (bottleneck architecture) |
+
+---
+
+## 🧮 **Mathematical Formulation**
+
+From the original Transformer paper ("Attention Is All You Need"):
+
+```
+FFN(x) = max(0, x·W₁ + b₁)·W₂ + b₂
+```
+
+Or with GELU (used in BERT/GPT):
+
+```
+FFN(x) = GELU(x·W₁ + b₁)·W₂ + b₂
+```
+
+Where:
+- `x` = input vector for **one token** (size: `d_model = 512`)
+- `W₁` = weight matrix (`512 × 2048`) → **expansion**
+- `W₂` = weight matrix (`2048 × 512`) → **contraction**
+- `b₁`, `b₂` = bias vectors
+- Hidden dimension = **2048** (4× the model dimension — standard in base Transformer)
+
+---
+
+## 📊 **Dimension Flow (For Your Example: "I can go alone")**
+
+| Step | Operation | Shape | Meaning |
+|------|-----------|-------|---------|
+| Input | From Self-Attention output | `4 × 512` | 4 tokens, each 512D |
+| Layer 1 | `x·W₁ + b₁` | `4 × 2048` | Expand to wider representation |
+| Activation | ReLU / GELU | `4 × 2048` | Introduce non-linearity |
+| Layer 2 | `·W₂ + b₂` | `4 × 512` | Contract back to original size |
+| Output | FFN result | `4 × 512` | Same shape → enables residual connection |
+
+✅ **Critical**: Output shape = Input shape (`4×512`) → allows **residual connection** (`x + FFN(x)`).
+
+---
+
+## 💡 **Why Does the FFN Exist? (The Big Picture)**
+
+Self-Attention alone is **just a weighted sum** — it's a **linear operation** (after softmax).  
+That means: without FFN, the entire Transformer would be **linear** → unable to model complex patterns.
+
+| Component | Capability | Limitation |
+|-----------|------------|------------|
+| **Self-Attention** | Captures *relationships* between tokens | Purely linear (weighted sum) |
+| **Feed Forward** | Adds *non-linearity* per token | No cross-token interaction |
+
+✅ **Together**:  
+- Self-Attention = "Who should I listen to?"  
+- FFN = "Now that I've listened, how do I *transform* what I learned?"
+
+This combination gives Transformers their power: **global context + local non-linear transformation**.
+
+---
+
+## 🧠 **Intuition: Think of It Like This**
+
+Imagine each token after Self-Attention is a **raw idea**:
+
+> `"I"` = [0.7×"I" + 0.2×"can" + 0.1×"go" + 0.1×"alone"]
+
+Now the FFN asks:  
+> *"What does this blended idea MEAN? How do I refine it into a richer representation?"*
+
+It applies a **learned transformation** — like a mini "thought processor" for each token — to:
+- Amplify important features
+- Suppress noise
+- Encode higher-level abstractions
+
+Example:  
+After FFN, `"alone"` might activate features like *"solitude"*, *"independence"*, *"single-person action"* — things not directly in the raw embedding.
+
+---
+
+
+## ✅ **Summary: Feed Forward in 3 Sentences**
+
+1. It's a **position-wise 2-layer MLP** (512 → 2048 → 512) applied independently to each token.
+2. It adds **non-linearity** — essential because Self-Attention alone is just a weighted sum (linear).
+3. Output shape = input shape → enables **residual connections** and stacking of deep layers.
+
+---
 
 ![8](8.png)
-![9](9.png)
+
+## ✅ **Masked Attention Explained — Precisely Based on Your Image**
+
+## 🔍 **Step-by-Step Explanation (Follow the Data Flow)**
+
+### ✅ **Step 1: Raw Attention Scores (Left Matrix)**
+
+This is what you get **before masking** — the standard `QK^T / √d_k` calculation.
+
+- Values like `63.3` (for "I" attending to itself), `1.2` (for "I" attending to "can"), etc.
+- **Problem**: The model sees **future tokens** (e.g., when predicting "I", it shouldn't see "can", "go", or "alone").
+
+> 💡 **Why this is bad**:  
+> If the model could see future tokens during training, it would "cheat" — making generation impossible in practice.
+
+---
+
+### ✅ **Step 2: Apply Causal Masking (Blue Arrow)**
+
+This is where **masking happens** — specifically **causal masking** (for autoregressive models).
+
+- **Rule**: For token at position `i`, it can **only attend to positions `≤ i`**.
+- **Implementation**: Set all **upper-triangle values** (future tokens) to `-∞`.
+
+> 📌 **Why `-∞`?**  
+> Because `softmax(-∞) = 0` → future tokens get **zero attention weight**.
+
+#### 🔁 **Example from Your Image**:
+| Token | Can Attend To | Values Set to `-∞` |
+|-------|---------------|---------------------|
+| **"I"** | Only itself | "can", "go", "alone" |
+| **"can"** | "I", itself | "go", "alone" |
+| **"go"** | "I", "can", itself | "alone" |
+| **"alone"** | All tokens | None |
+
+---
+
+### ✅ **Step 3: Apply Softmax (Right Matrix → Output)**
+
+After masking, apply `softmax` to the matrix:
+
+```
+softmax(scores) = e^scores / sum(e^scores)
+```
+
+- **Result**: All `-∞` positions become **0** (since `e^(-∞) = 0`)
+- **Only valid attention weights remain** (for past tokens)
+
+#### 📊 **From Your Image**:
+| Token | Before Masking | After Masking | Meaning |
+|-------|----------------|---------------|---------|
+| **"I"** | [63.3, 1.2, 2.6, 7.2] | [63.3, -∞, -∞, -∞] | Only attends to itself |
+| **"can"** | [3.25, 0.3, 1.2, 2.1] | [3.25, 96.1, -∞, -∞] | Attends to "I" and itself |
+| **"go"** | [12.0, 11.9, 52.9, 2.9] | [12.0, 11.9, 52.9, -∞] | Attends to "I", "can", itself |
+| **"alone"** | [1.6, 63.1, 14.2, 101.3] | [1.6, 63.1, 14.2, 101.3] | Attends to all tokens |
+
+---
+
+## 💡 **Why This Matters (The Big Picture)**
+
+| Without Masking | With Masking |
+|-----------------|--------------|
+| Model sees future tokens → cheating | Model **only sees past tokens** → realistic generation |
+| Impossible to use for text generation | Enables **autoregressive generation** (like GPT) |
+| Would learn "shortcuts" | Learns **true sequential dependencies** |
+
+### 🔑 **Critical Insight**:
+This is how Transformers generate text **one token at a time**:
+1. Predict "I" → only uses start token
+2. Predict "can" → uses "I"
+3. Predict "go" → uses "I can"
+4. Predict "alone" → uses "I can go"
+
+Without masking, the model would "know" the answer in advance — making generation impossible.
+
+---
+
+## 🧠 **Intuition: Think of It Like This**
+
+Imagine you're writing a sentence **one word at a time**:
+
+> "I can go alone"
+
+- When writing **"I"**, you can't see "can", "go", or "alone"
+- When writing **"can"**, you can see "I" but not "go" or "alone"
+- When writing **"go"**, you can see "I can" but not "alone"
+- When writing **"alone"**, you can see "I can go"
+
+Masked attention **enforces this constraint** in the model — it's not optional, it's **necessary for generation**.
+
+---
+
+## ❗ **Clarification: This Is Only for the Decoder**
+
+- **Encoder**: Uses **unmasked attention** (sees all tokens) → for understanding input
+- **Decoder**: Uses **masked attention** (sees only past tokens) → for generating output
+
+This is why your diagram shows:
+- **Encoder**: "Multi-Head Attention" (no masking)
+- **Decoder**: "Masked Multi-Head Attention" (with masking)
+
+---
+
 ![10](10.png)
+
+## ✅ **Transformer Training Explained — Precisely Based on Your Image**
+
+## 🔍 **Step-by-Step Training Flow (Follow the Data Flow)**
+
+### ✅ **Step 1: Input Preparation**
+- **Encoder Input**: `"<S> I can go alone <E>"`
+  - `<S>` = Start token
+  - `<E>` = End token
+  - *Why?* Tells model where sequence begins/ends
+
+- **Decoder Input**: `"<S> أَسْتَطِيعُ الْذَهَابَ وَحِيداً"` (Arabic for "I can go alone")
+  - **Critical**: This is **shifted right** by 1 token
+  - *Why?* To predict next token at each step (autoregressive)
+
+> 💡 **Key Insight**:  
+> During training, the decoder **never sees its own predictions** — it always gets the **ground truth** (teacher forcing).
+
+---
+
+### ✅ **Step 2: Encoder Processing**
+```
+"<S> I can go alone <E>" → Encoder → Encoder Output (context vectors)
+```
+- Encoder processes **entire source sentence at once** (self-attention)
+- Output: Contextualized representation of each token
+- *Example*: "I" now knows it's the subject of "go alone"
+
+---
+
+### ✅ **Step 3: Decoder Processing**
+```
+"<S> أَسْتَطِيعُ الْذَهَابَ وَحِيداً" → Decoder → Decoder Output
+```
+- **How it works**:
+  1. First token: `<S>` → predicts "أَسْتَطِيعُ"
+  2. Second token: `<S> أَسْتَطِيعُ` → predicts "الْذَهَابَ"
+  3. Third token: `<S> أَسْتَطِيعُ الْذَهَابَ` → predicts "وَحِيداً"
+  4. Fourth token: `<S> أَسْتَطِيعُ الْذَهَابَ وَحِيداً` → predicts `<E>`
+
+- **Critical**: At each step, decoder **sees only previous ground truth tokens** (masked attention)
+- *Why?* Prevents error propagation during training
+
+---
+
+### ✅ **Step 4: Output Projection**
+```
+Decoder Output (4×512) → Linear (512×vocab_sz) → (4×vocab_sz) → Softmax → (4×vocab_sz)
+```
+- **Linear layer**: Projects 512D vectors to vocabulary space
+  - *Example*: 512D → 30,000 (vocabulary size)
+- **Softmax**: Converts to probability distribution over vocabulary
+  - *Example*: Probability that next token is "أَسْتَطِيعُ" = 0.85
+
+---
+
+### ✅ **Step 5: Loss Calculation**
+```
+Softmax Output → Cross Entropy Loss → Compare to Target
+```
+- **Target**: `"أَسْتَطِيعُ الْذَهَابَ وَحِيداً <E>"`
+  - **Critical**: This is **shifted left** (no `<S>`, has `<E>`)
+- **How loss works**:
+  - For position 1: Compare prediction for "أَسْتَطِيعُ" vs actual "أَسْتَطِيعُ"
+  - For position 2: Compare prediction for "الْذَهَابَ" vs actual "الْذَهَابَ"
+  - ...
+
+> 💡 **Why this works**:  
+> The loss is calculated **only on the predicted tokens** (not the `<S>` token), and **only where we have ground truth**.
+
+---
+
+## 💡 **Why This Training Setup Matters (The Big Picture)**
+
+| During Training | During Inference |
+|-----------------|------------------|
+| **Teacher Forcing**: Decoder gets ground truth | **Autoregressive**: Uses own predictions |
+| **Faster convergence** | **Error accumulation possible** |
+| **More stable training** | Requires careful decoding (beam search) |
+| **Assumes perfect previous tokens** | Must handle prediction errors |
+
+### 🔑 **Critical Insight**:
+This mismatch between training (teacher forcing) and inference (autoregressive) is called **exposure bias** — one reason why models sometimes generate poor text.
+
+---
+
+## 🧠 **Intuition: Think of It Like This**
+
+Imagine teaching a child to translate:
+- **Teacher Forcing (Training)**:  
+  > You: "I" → Child: "أَسْتَطِيعُ"  
+  > You: "I can" → Child: "الْذَهَابَ"  
+  > You: "I can go" → Child: "وَحِيداً"  
+
+- **Autoregressive (Inference)**:  
+  > You: "I" → Child: "أَسْتَطِيعُ"  
+  > Child: "I أَسْتَطِيعُ" → Child: "الْذَهَابَ"  
+  > Child: "I أَسْتَطِيعُ الْذَهَابَ" → Child: "وَحِيداً"  
+
+The child learns perfectly with teacher help, but struggles when making mistakes on its own.
+
+---
+
 ![11](11.png)
-![12](12.png)
-![13](13.png)
-![14](14.png)
+
+## ✅ **Transformer Testing (Inference) Explained — Precisely Based on Your Image**
+
+## 🔍 **Step-by-Step Testing Flow (Follow the Data Flow)**
+
+### ✅ **Step 1: Input Preparation**
+- **Encoder Input**: `"<S> I can go alone <E>"`
+  - Same as training
+  - *Why?* Source sentence doesn't change
+
+- **Decoder Input**: `"<S>"` **ONLY**
+  - **Critical difference from training**:  
+    → No ground truth tokens available  
+    → Only start token provided
+
+---
+
+### ✅ **Step 2: Encoder Processing**
+```
+"<S> I can go alone <E>" → Encoder → Encoder Output
+```
+- **Same as training**:  
+  Processes entire source sentence at once  
+  Creates contextualized representation
+
+---
+
+### ✅ **Step 3: Decoder Processing (Time Step 1)**
+```
+"<S>" → Decoder → Decoder Output
+```
+- **How it works**:
+  1. Decoder sees **only start token** (`<S>`)
+  2. Uses **masked self-attention** (sees only `<S>`)
+  3. Uses **cross-attention** to encoder output (sees all source tokens)
+  4. Generates **first token prediction**
+
+- **Critical**:  
+  → No ground truth available (unlike training)  
+  → Must predict **from scratch**
+
+---
+
+### ✅ **Step 4: Output Generation**
+```
+Decoder Output → Linear → Softmax → "أَسْتَطِيعُ"
+```
+- **Linear layer**: Projects 512D → vocabulary space (e.g., 30,000 tokens)
+- **Softmax**: Converts to probability distribution
+- **Output**: Token with **highest probability** (greedy decoding)  
+  → Here: `"أَسْتَطِيعُ"` (Arabic for "I can")
+
+---
+
+## 💡 **Why This Is Different From Training (The Big Picture)**
+
+| Training (Teacher Forcing) | Testing (Inference) |
+|----------------------------|---------------------|
+| **Decoder input**: Ground truth tokens | **Decoder input**: Model's own predictions |
+| **Example**: `"<S> أَسْتَطِيعُ"` | **Example**: `"<S>"` (Time Step 1) |
+| **Stable**: No error accumulation | **Error-prone**: Mistakes propagate |
+| **Faster**: Parallel processing | **Slower**: Autoregressive (one token at a time) |
+| **Assumes perfect previous tokens** | **Must handle imperfect predictions** |
+
+### 🔑 **Critical Insight**:
+This is called **exposure bias** — the mismatch between training (perfect inputs) and inference (imperfect predictions).  
+→ This is why models sometimes generate **nonsense text** during real-world use.
+
+---
+
+## 🧠 **Intuition: Think of It Like This**
+
+Imagine teaching a child to translate:
+- **Training (Teacher Forcing)**:  
+  > You: "I" → Child: "أَسْتَطِيعُ" (correct)  
+  > You: "I can" → Child: "الْذَهَابَ" (correct)  
+
+- **Testing (Inference)**:  
+  > You: "I" → Child: "أَسْتَطِيعُ" (correct)  
+  > Child: "I أَسْتَطِيعُ" → Child: "الْذَهَابَ" (correct)  
+  > But if Child: "I أَسْتَطِيعُ" → Child: "خَطَأ" (error)  
+  > Then: "I أَسْتَطِيعُ خَطَأ" → **cascading errors**
+
+This is why real-world translation can sometimes go off the rails.
+
+---
+
+
+
+## 🚀 **What Happens Next? (Beyond This Image)**
+
+1. **Append generated token** to decoder input:  
+   `"<S> أَسْتَطِيعُ"`
+
+2. **Repeat process** for next token:  
+   - Input: `"<S> أَسْتَطِيعُ"`  
+   - Output: `"الْذَهَابَ"`
+
+3. **Continue** until:  
+   - `<E>` token is generated, OR  
+   - Maximum sequence length is reached
+
+This is **how all text generation works** (GPT, LLaMA, etc.) — one token at a time, building on previous predictions.
+
+---
+
 
