@@ -32,7 +32,8 @@ is -> 25 <br>
 
 Subword tokenization algorithms are the industry standard for Large Language Models (LLMs) like GPT-4 because they balance vocabulary size with the ability to handle rare words.
 
-- **Byte Pair Encoding (BPE):** Used by GPT models; iteratively merges the most frequent pairs of characters or tokens.
+- **Byte Pair Encoding (BPE):** Used by GPT models; iteratively merges the most frequent pairs of characters or tokens.<br>
+  more info : https://vizuara.substack.com/p/understanding-byte-pair-encoding
 - **WordPiece:** Used by BERT; similar to BPE but uses a likelihood-based merging strategy.
 - **SentencePiece:** A language-neutral system that treats whitespace as a normal symbol, effective for languages like Chinese or Japanese that don't use spaces.
 - **Unigram:** A statistical algorithm that starts with a large vocabulary and prunes it based on probability of occurrence in a corpus.
@@ -217,9 +218,6 @@ According to the RNN equation:
 1. **Addition:** This result $[1.4, 3.2, 5.0]$ is added to the memory part ($W_{aa} a^{<0>}$) and the bias ($b_a$).
 2. **Activation:** The sum goes into $g$ (tanh) to squash the numbers between -1 and 1.
 3. **Final State:** The result is $a^{<1>}$—the model's first "memory" of "Yassine".
-
-**Key Takeaway for your slide:**  
-The matrix $W_{ax}$ acts as a "translator" that takes the raw word vector and extracts specific features (like "Is this a person?" or "Is this the start of a sentence?") into the model's internal memory space.
 
 → How do we choose $b$?
 
