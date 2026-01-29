@@ -480,12 +480,238 @@ Where:
 - Smooth, continuous, and allow the model to **extrapolate** to longer sequences than seen during training.
 - Also lets the model learn **relative positions** easily (e.g., "word A is 3 positions before word B").
 
-![4](4.png)
+![7](7.png)
 
+This slide teaches the **core idea behind Q/K/V** using a real-world lookup example.
+
+#### 🔍 How It Works:
+Imagine you have a **database** (like a dictionary or hash table):
+
+| Key        | Value     |
+|------------|-----------|
+| Food       | Rice      |
+| Computers  | Keyboard  |
+| Cleaning   | Soap      |
+| Office     | Papers    |
+
+Now you ask:  
+> **“Query = ‘Pasta’”**
+
+What do you expect?  
+→ You want something related to *food*, so you look for the **key most similar to “Pasta”**, which is `"Food"` → and retrieve its **value**: `"Rice"`.
+
+But in reality:
+- “Pasta” ≠ “Food” exactly — it’s *similar*.
+- So instead of exact match, you compute **similarity** between query and each key.
+- Then you **weight** the values by that similarity — and return a *blended* result.
+
+That’s **exactly** what self-attention does:
+- `Query` = what you’re looking for (e.g., current word)
+- `Key` = what’s available to match against (all words)
+- `Value` = what you actually want to retrieve (semantic content)
+
+In Transformers:
+- All three (Q, K, V) come from the **same input** (hence *self*-attention),
+- But they’re projected via different learned matrices (`W_Q`, `W_K`, `W_V`) to serve different roles.
+
+---
+
+### 💡 Why This Analogy Matters
+
+Without this, Q/K/V seem arbitrary. With it, you see:
+> Self-Attention is just a **soft, differentiable database lookup** — where:
+> - You don’t pick one key — you blend *all* keys by relevance,
+> - And you get a weighted combination of all values.
+
+This is how the model learns to say:  
+> *“For the word ‘alone’, I care mostly about ‘I’, a little about ‘go’, and almost nothing about ‘can’.”*
+
+---
+
+![4](4.png)
+Let's break down **exactly what's happening in this image** — **step by step**, **no assumptions**, **no fluff** — based *only* on what's visually presented.
+
+---
+
+### 🖼️ **What This Image Shows: The Core Computation of Self-Attention**
+
+This is **not** an analogy — this is the **actual mathematical operation** inside the Transformer.  
+It shows **how attention scores are computed from Q and K**, then **applied to V** to get the output.
+
+---
+
+## 🔍 Step-by-Step Breakdown (Follow the Data Flow)
+
+### ✅ **Step 1: Input Dimensions**
+- **`Q`** = Query matrix → **`4*512`**  
+  *(4 tokens × 512 dimensions per token)*  
+  Example: Rows = `[I, can, go, alone]`, Columns = 512 features
+- **`K`** = Key matrix → **`4*512`** (same as Q)  
+  But we need `K^T` (transposed) → **`512*4`**  
+  *(512 features × 4 tokens)*
+
+> 💡 **Why transpose K?**  
+> To align dimensions for matrix multiplication:  
+> `Q (4×512) × K^T (512×4) = (4×4)`
+
+---
+
+### ✅ **Step 2: Compute Raw Attention Scores**
+```
+Q × K^T = (4×512) × (512×4) = 4×4 matrix
+```
+- Each cell `(i,j)` = **dot product** between Query token `i` and Key token `j`
+- Measures **similarity** between tokens (higher = more relevant)
+
+> 📌 **Example**:  
+> `Q["I"] • K["I"]` = high similarity → large value  
+> `Q["I"] • K["alone"]` = low similarity → small value
+
+---
+
+### ✅ **Step 3: Scale by √d_k**
+```
+Raw Scores / √d_k = (4×4) / √512
+```
+- `d_k = 512` (dimension of key vectors)
+- `√512 ≈ 22.6`
+- **Why?** Prevents large dot products from pushing softmax into extreme values (causing vanishing gradients during training).
+
+> ⚠️ **Critical detail**:  
+> Without this scaling, gradients become unstable → model fails to train.
+
+---
+
+### ✅ **Step 4: Apply Softmax**
+```
+softmax(Raw Scores / √512) = (4×4) attention weights
+```
+- Converts raw scores into **probabilities** (each row sums to 1)
+- Shows **how much each token should attend to others**
+
+> 📊 **From the table**:  
+> For token `"I"` (row 1):  
+> `0.7` → attend to itself  
+> `0.2` → attend to `"can"`  
+> `0.1` → attend to `"go"`  
+> `0.1` → attend to `"alone"`  
+> *Total = 1.0*
+
+---
 
 ![5](5.png)
-![6](6.png)
-![7](7.png)
+Let's break down **exactly what's happening in this image** — **step by step**, **no assumptions**, **no fluff** — based *only* on what's visually presented.
+
+---
+
+### 🖼️ **What This Image Shows: The Core Computation of Self-Attention**
+
+This is **not** an analogy — this is the **actual mathematical operation** inside the Transformer.  
+It shows **how attention scores are computed from Q and K**, then **applied to V** to get the output.
+
+---
+
+## 🔍 Step-by-Step Breakdown (Follow the Data Flow)
+
+### ✅ **Step 1: Input Dimensions**
+- **`Q`** = Query matrix → **`4*512`**  
+  *(4 tokens × 512 dimensions per token)*  
+  Example: Rows = `[I, can, go, alone]`, Columns = 512 features
+- **`K`** = Key matrix → **`4*512`** (same as Q)  
+  But we need `K^T` (transposed) → **`512*4`**  
+  *(512 features × 4 tokens)*
+
+> 💡 **Why transpose K?**  
+> To align dimensions for matrix multiplication:  
+> `Q (4×512) × K^T (512×4) = (4×4)`
+
+---
+
+### ✅ **Step 2: Compute Raw Attention Scores**
+```
+Q × K^T = (4×512) × (512×4) = 4×4 matrix
+```
+- Each cell `(i,j)` = **dot product** between Query token `i` and Key token `j`
+- Measures **similarity** between tokens (higher = more relevant)
+
+> 📌 **Example**:  
+> `Q["I"] • K["I"]` = high similarity → large value  
+> `Q["I"] • K["alone"]` = low similarity → small value
+
+---
+
+### ✅ **Step 3: Scale by √d_k**
+```
+Raw Scores / √d_k = (4×4) / √512
+```
+- `d_k = 512` (dimension of key vectors)
+- `√512 ≈ 22.6`
+- **Why?** Prevents large dot products from pushing softmax into extreme values (causing vanishing gradients during training).
+
+> ⚠️ **Critical detail**:  
+> Without this scaling, gradients become unstable → model fails to train.
+
+---
+
+### ✅ **Step 4: Apply Softmax**
+```
+softmax(Raw Scores / √512) = (4×4) attention weights
+```
+- Converts raw scores into **probabilities** (each row sums to 1)
+- Shows **how much each token should attend to others**
+
+> 📊 **From the table**:  
+> For token `"I"` (row 1):  
+> `0.7` → attend to itself  
+> `0.2` → attend to `"can"`  
+> `0.1` → attend to `"go"`  
+> `0.1` → attend to `"alone"`  
+> *Total = 1.0*
+
+---
+
+### ✅ **Step 5: Multiply by V (Value Matrix)**
+```
+Attention Weights (4×4) × V (4×512) = Output (4×512)
+```
+- `V` = Value matrix → **`4*512`** (same as Q/K)
+- Each row of output = **weighted sum of all value vectors**
+
+> 📌 **Example for token `"I"`**:  
+> `Output["I"] = (0.7 × V["I"]) + (0.2 × V["can"]) + (0.1 × V["go"]) + (0.1 × V["alone"])`  
+> → Now `"I"` carries context from other words
+
+---
+
+## 💡 **Why This Step Matters (The Big Picture)**
+
+| Before This Step | After This Step |
+|------------------|-----------------|
+| Each token is isolated | Each token "knows" about all others |
+| No context awareness | Context-aware representation |
+| `"I"` = just "I" | `"I"` = "I" + hints of "can", "go", "alone" |
+
+This is **how Transformers capture long-range dependencies** — unlike RNNs (which see only previous tokens) or CNNs (which see only local windows).
+
+---
+
+## 🧠 **Pro Tip: Think of It Like This**
+
+Imagine 4 people in a meeting:  
+> **"I", "can", "go", "alone"**
+
+Each person asks:  
+> **"Who should I listen to most when forming my opinion?"**
+
+- They look at everyone else (**Q vs K** → compute similarity)
+- Decide who’s relevant (**softmax** → attention weights)
+- Blend what others said (**weights × V** → output)
+
+At the end, **every person has updated their view** — now informed by the whole group.
+
+---
+
+
 ![8](8.png)
 ![9](9.png)
 ![10](10.png)
