@@ -35,7 +35,8 @@ Subword tokenization algorithms are the industry standard for Large Language Mod
 - **Byte Pair Encoding (BPE):** Used by GPT models; iteratively merges the most frequent pairs of characters or tokens.<br>
   more info : https://vizuara.substack.com/p/understanding-byte-pair-encoding
 - **WordPiece:** Used by BERT; similar to BPE but uses a likelihood-based merging strategy.
-- **SentencePiece:** A language-neutral system that treats whitespace as a normal symbol, effective for languages like Chinese or Japanese that don't use spaces.
+- **SentencePiece:** A language-neutral system that treats whitespace as a normal symbol, effective for languages like Chinese or Japanese that don't use spaces.<br>
+  more info : https://huggingface.co/learn/llm-course/chapter6/6
 - **Unigram:** A statistical algorithm that starts with a large vocabulary and prunes it based on probability of occurrence in a corpus.
 
 ---
@@ -1250,5 +1251,8 @@ This is why real-world translation can sometimes go off the rails.
 This is **how all text generation works** (GPT, LLaMA, etc.) — one token at a time, building on previous predictions.
 
 ---
+
+## BERT : 
+
 
 
